@@ -3,7 +3,7 @@
  * Google Apps Script Backend (Web App)
  */
 
-const SPREADSHEET_ID = 'PASTE_YOUR_SPREADSHEET_ID_HERE';
+const SPREADSHEET_ID = '1hZqZMD2wFi4qoMqmPQNLMo18x6jxXXCd8QjXogBE8f0';
 const INVENTORY_SHEET = 'Inventory';
 const PURCHASES_SHEET = 'Purchases';
 const DAILYSALES_SHEET = 'DailySales';
@@ -39,7 +39,7 @@ function withScope(sheetName, fn) {
     header.forEach((h, i) => { o[h] = r[i]; });
     return o;
   });
-  return { sh: sh, header: header, data: data, fn: fn(data, header, sh) };
+  return fn(data, header, sh);
 }
 
 function writeTable(sheetName, rows, columns) {
@@ -117,14 +117,14 @@ function doPost(e) {
   if (action === 'addItem') {
     const it = body.item || {};
     const row = Object.assign({ id: uid('itm'), open: 0, min: 2, cost: 0, price: 0 }, it, { id: it.id || uid('itm') });
-    const got = withScope(INVENTORY_SHEET, (rows) => { rows.push(row); return rows; });
+    const got = withScope(INVENTORY_SHEET, (rows) => { rows.push(row); writeTable(INVENTORY_SHEET, rows, INVENTORY_COLS); return rows; });
     audit(actor, 'ITEM_CREATE', 'Created inventory item ' + row.code);
     return ContentService.createTextOutput(JSON.stringify({ ok: true, row: row })).setMimeType(ContentService.MimeType.JSON);
   }
 
   if (action === 'updateItem') {
     const it = body.item || {};
-    const got = withScope(INVENTORY_SHEET, (rows) => { const i = rows.findIndex(r => toText(r.id) === toText(it.id)); if (i < 0) throw new Error('Item not found'); rows[i] = Object.assign({}, rows[i], it); return rows; });
+    const got = withScope(INVENTORY_SHEET, (rows) => { const i = rows.findIndex(r => toText(r.id) === toText(it.id)); if (i < 0) throw new Error('Item not found'); rows[i] = Object.assign({}, rows[i], it); writeTable(INVENTORY_SHEET, rows, INVENTORY_COLS); return rows; });
     audit(actor, 'ITEM_UPDATE', 'Updated inventory item ' + it.code);
     return ContentService.createTextOutput(JSON.stringify({ ok: true })).setMimeType(ContentService.MimeType.JSON);
   }
@@ -140,7 +140,7 @@ function doPost(e) {
     const p = body.purchase || {};
     p.id = p.id || uid('pur');
     p.date = toDate(p.date);
-    const got = withScope(PURCHASES_SHEET, (rows) => { rows.push(p); return rows; });
+    const got = withScope(PURCHASES_SHEET, (rows) => { rows.push(p); writeTable(PURCHASES_SHEET, rows, PURCHASES_COLS); return rows; });
     audit(actor, 'PURCHASE_CREATE', 'Purchase ' + p.ref + ' qty ' + p.qty);
     return ContentService.createTextOutput(JSON.stringify({ ok: true, row: p })).setMimeType(ContentService.MimeType.JSON);
   }
@@ -149,7 +149,7 @@ function doPost(e) {
     const s = body.sale || {};
     s.id = s.id || uid('sal');
     s.date = toDate(s.date);
-    const got = withScope(DAILYSALES_SHEET, (rows) => { rows.push(s); return rows; });
+    const got = withScope(DAILYSALES_SHEET, (rows) => { rows.push(s); writeTable(DAILYSALES_SHEET, rows, DAILYSALES_COLS); return rows; });
     audit(actor, 'SALE_CREATE', 'Sale ' + (s.ref || s.code) + ' qty ' + s.qty);
     return ContentService.createTextOutput(JSON.stringify({ ok: true, row: s })).setMimeType(ContentService.MimeType.JSON);
   }
@@ -158,10 +158,10 @@ function doPost(e) {
     const r = body.repair || {};
     r.id = r.id || uid('rep');
     r.date = toDate(r.date);
-    const got = withScope(WORKSHOPREPAIRS_SHEET, (rows) => { rows.push(r); return rows; });
+    const got = withScope(WORKSHOPREPAIRS_SHEET, (rows) => { rows.push(r); writeTable(WORKSHOPREPAIRS_SHEET, rows, WORKSHOPREPAIRS_COLS); return rows; });
     if (r.code) {
       const rp = Object.assign({ id: uid('rpart'), date: r.date, repairId: r.id, job: r.job, code: r.code, qty: r.qty, price: r.price, labour: r.labour }, body.repairPart || {});
-      withScope(REPAIRPARTS_SHEET, (rows2) => { rows2.push(rp); return rows2; });
+      withScope(REPAIRPARTS_SHEET, (rows2) => { rows2.push(rp); writeTable(REPAIRPARTS_SHEET, rows2, REPAIRPARTS_COLS); return rows2; });
     }
     audit(actor, 'REPAIR_CREATE', 'Repair ' + (r.job || '') + ' qty ' + r.qty);
     return ContentService.createTextOutput(JSON.stringify({ ok: true, row: r })).setMimeType(ContentService.MimeType.JSON);
@@ -184,4 +184,32 @@ function doPost(e) {
 
 function handleAuth(email, pin, name, role) { const users = withScope(USERS_SHEET, (rows) => rows); const u = users.find(r => toText(r.email) === toText(email)); if (!u) return { ok: false, error: 'User not found' }; if (toText(u.active) === 'false') return { ok: false, error: 'User inactive' }; const pinOk = toText(u.pin) === toText(String(pin)); const isAdmin = toText(u.role) === 'admin' || toText(u.role) === 'owner'; if (!pinOk) return { ok: false, error: 'Invalid PIN' }; if (toText(role) !== 'admin' && !isAdmin) return { ok: false, error: 'Admin access required' }; return { ok: true, user: { email: toText(u.email), name: toText(u.name), role: toText(u.role) } }; } function addUser(u) { const row = { id: uid('usr'), email: toText(u.email), name: toText(u.name), role: toText(u.role || 'employee'), pin: toText(u.pin || ''), active: u.active === undefined ? true : !!u.active, createdAt: new Date().toISOString() }; const got = withScope(USERS_SHEET, (rows) => { rows.push(row); return rows; }); return { ok: true, user: row }; } function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify({ ok: true, service: 'Impact Service Center Garage API', time: new Date().toISOString() })).setMimeType(ContentService.MimeType.JSON);
+}
+function initDatabase() {
+  const HEADERS = {};
+  HEADERS[INVENTORY_SHEET] = INVENTORY_COLS;
+  HEADERS[PURCHASES_SHEET] = PURCHASES_COLS;
+  HEADERS[DAILYSALES_SHEET] = DAILYSALES_COLS;
+  HEADERS[WORKSHOPREPAIRS_SHEET] = WORKSHOPREPAIRS_COLS;
+  HEADERS[REPAIRPARTS_SHEET] = REPAIRPARTS_COLS;
+  HEADERS[CUSTOMERS_SHEET] = CUSTOMERS_COLS;
+  HEADERS[SUPPLIERS_SHEET] = SUPPLIERS_COLS;
+  HEADERS[STOCKMOVEMENTS_SHEET] = STOCKMOVEMENTS_COLS;
+  HEADERS[USERS_SHEET] = USERS_COLS;
+  HEADERS[AUDITLOGS_SHEET] = AUDITLOGS_COLS;
+  HEADERS[SETTINGS_SHEET] = SETTINGS_COLS;
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const names = Object.keys(HEADERS);
+  for (let i = 0; i < names.length; i++) {
+    const name = names[i];
+    let sh = ss.getSheetByName(name);
+    if (!sh) sh = ss.insertSheet(name);
+    sh.clearContents();
+    const cols = HEADERS[name];
+    sh.getRange(1, 1, 1, cols.length).setValues([cols]);
+    sh.getRange(1, 1, 1, cols.length).setFontWeight('bold');
+    sh.setFrozenRows(1);
+    sh.autoResizeColumns(1, cols.length);
+  }
+  return 'Database initialized: ' + names.join(', ');
 }
