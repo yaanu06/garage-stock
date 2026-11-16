@@ -179,9 +179,9 @@ function doPost(e) {
     return ContentService.createTextOutput(JSON.stringify({ ok: true })).setMimeType(ContentService.MimeType.JSON);
   }
 
-  return ContentService.createTextOutput(JSON.stringify({ ok: false, error: 'Unknown action' })).setMimeType(ContentService.MimeType.JSON);
+  if (action === 'auth') { const res = handleAuth(toText(body.email), toText(body.pin), toText(body.name || ''), toText(body.role || '')); return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON); }  if (action === 'addUser') { const res = addUser(body.user || {}); return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON); }  return ContentService.createTextOutput(JSON.stringify({ ok: false, error: 'Unknown action' })).setMimeType(ContentService.MimeType.JSON);
 }
 
-function doGet(e) {
+function handleAuth(email, pin, name, role) { const users = withScope(USERS_SHEET, (rows) => rows); const u = users.find(r => toText(r.email) === toText(email)); if (!u) return { ok: false, error: 'User not found' }; if (toText(u.active) === 'false') return { ok: false, error: 'User inactive' }; const pinOk = toText(u.pin) === toText(String(pin)); const isAdmin = toText(u.role) === 'admin' || toText(u.role) === 'owner'; if (!pinOk) return { ok: false, error: 'Invalid PIN' }; if (toText(role) !== 'admin' && !isAdmin) return { ok: false, error: 'Admin access required' }; return { ok: true, user: { email: toText(u.email), name: toText(u.name), role: toText(u.role) } }; } function addUser(u) { const row = { id: uid('usr'), email: toText(u.email), name: toText(u.name), role: toText(u.role || 'employee'), pin: toText(u.pin || ''), active: u.active === undefined ? true : !!u.active, createdAt: new Date().toISOString() }; const got = withScope(USERS_SHEET, (rows) => { rows.push(row); return rows; }); return { ok: true, user: row }; } function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify({ ok: true, service: 'Impact Service Center Garage API', time: new Date().toISOString() })).setMimeType(ContentService.MimeType.JSON);
 }
