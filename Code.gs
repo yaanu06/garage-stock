@@ -57,6 +57,12 @@ function writeTable(sheetName, rows, columns) {
 function toNumber(v, fallback) { const n = Number(v); return isFinite(n) ? n : (fallback === undefined ? 0 : fallback); }
 function toText(v) { return v === undefined || v === null ? '' : String(v); }
 function toDate(v) { const s = toText(v); return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : new Date().toISOString().slice(0, 10); }
+function ndate(v) {
+  if (v instanceof Date && !isNaN(v)) return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  const s = toText(v).trim();
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : s;
+}
 function uid(prefix) { return prefix + '_' + Utilities.getUuid(); }
 
 function stockOf(item, purchases, sales, repairs) {
@@ -90,7 +96,11 @@ function handleGetAll() {
   const map = { 'Inventory': 'items', 'Purchases': 'purchases', 'DailySales': 'sales', 'WorkshopRepairs': 'repairs', 'RepairParts': 'repairParts', 'Customers': 'customers', 'Suppliers': 'suppliers' };
   Object.keys(map).forEach(name => {
     const got = withScope(name, (rows) => rows);
-    data[map[name]] = got;
+    if (name === 'Purchases' || name === 'DailySales' || name === 'WorkshopRepairs') {
+      data[map[name]] = got.map(r => Object.assign({}, r, { date: ndate(r.date) }));
+    } else {
+      data[map[name]] = got;
+    }
   });
   return data;
 }
