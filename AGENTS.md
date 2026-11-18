@@ -25,7 +25,10 @@
 
 ## Notes
 - Code.gs (2026-11-17) normalizes date cells to `yyyy-MM-dd` server-side (`ndate`). Requires manual redeploy in Apps Script. index.html also normalizes dates client-side, so the app works either way.
-- Single-file app: keep `index.html` self-contained. Sales schema is one row per item with a shared `ref` for multi-item receipts.
+- Code.gs (2026-11-18) adds `paid` to `DAILYSALES_COLS`. **Until the web app is redeployed, `saveAll` rewrites DailySales without `paid`, wiping payment flags on sync.** Admin-only toggle of paid/credit lives in the Payments tab.
+- Tabs: Inventory (includes Stock-In / Record Purchase), Payments (paid/credit tracking + invoice generator), Daily Sales (multi-item, service charges), Workshop Repairs, Customers, Suppliers, Daily Summary, Monthly Reports, Admin Panel, Backup.
+- Single-file app: keep `index.html` self-contained. Sales schema is one row per line (item or `SRV: <service>`), shared `ref` groups a receipt.
+- The 60 s backend sync no longer re-renders while the user has unsaved form input (`formDirty` guard); it applies silently and renders after the next save/submit.
 
 ## Tone / audience
 - Small-business owner; app is used in a garage shop; simple, reliable interface.
