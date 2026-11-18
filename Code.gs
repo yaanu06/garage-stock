@@ -18,7 +18,7 @@ const SETTINGS_SHEET = 'Settings';
 
 const INVENTORY_COLS = ['id', 'code', 'name', 'category', 'open', 'min', 'cost', 'price', 'supplier', 'photo'];
 const PURCHASES_COLS = ['id', 'date', 'code', 'qty', 'cost', 'supplier', 'ref'];
-const DAILYSALES_COLS = ['id', 'date', 'code', 'qty', 'price', 'customer', 'ref', 'repairId', 'labour', 'paid'];
+const DAILYSALES_COLS = ['id', 'date', 'code', 'qty', 'price', 'customer', 'ref', 'repairId', 'labour', 'paid', 'payment'];
 const WORKSHOPREPAIRS_COLS = ['id', 'date', 'job', 'customer', 'vehicle', 'work', 'code', 'qty', 'price', 'labour'];
 const REPAIRPARTS_COLS = ['id', 'date', 'repairId', 'job', 'code', 'qty', 'price', 'labour'];
 const CUSTOMERS_COLS = ['id', 'name', 'phone', 'email', 'notes'];
