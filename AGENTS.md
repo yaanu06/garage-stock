@@ -28,6 +28,7 @@
 - `index.html` normalizes dates client-side too, so the app works even if the backend reverted.
 - Admin-only: inventory add/edit/delete, paid/credit toggle. Purchases and everything else are counter-level.
 - Tabs: Inventory (includes Stock-In / Record Purchase), Payments (paid/credit tracking + invoice generator), Daily Sales (multi-item, service charges), Workshop Repairs, Customers, Suppliers, Daily Summary, Monthly Reports, Admin Panel, Backup.
+- Invoice PDF: "Download PDF" in the Payments tab rasterises #invoiceView with html2canvas → jsPDF (`vendor.js`, lazy-loaded only on tap) and saves `Impact-Invoice-<ref>.pdf`. Print path is kept as a fallback. Do not rename `vendor.js` without updating `loadPdfLibs()` in index.html; do not edit it (regenerate from npm if updating jspdf/html2canvas).
 - Single-file app: keep `index.html` self-contained. Sales schema is one row per line (item or `SRV: <service>`), shared `ref` groups a receipt.
 - The 60 s backend sync no longer re-renders while the user has unsaved form input (`formDirty` guard); it applies silently and renders after the next save/submit.
 
