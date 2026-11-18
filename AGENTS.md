@@ -24,8 +24,9 @@
 - Local preview is plain **http://** — https on port 8642 throws EPROTO (TLS handshake).
 
 ## Notes
-- Code.gs (2026-11-17) normalizes date cells to `yyyy-MM-dd` server-side (`ndate`). Requires manual redeploy in Apps Script. index.html also normalizes dates client-side, so the app works either way.
-- Code.gs (2026-11-18) adds `paid` to `DAILYSALES_COLS`. **Until the web app is redeployed, `saveAll` rewrites DailySales without `paid`, wiping payment flags on sync.** Admin-only toggle of paid/credit lives in the Payments tab.
+- Apps Script redeployed 2026-11-18 as **Version 3** (project id `1Ueg3u-IzPsRZZ3BN-YMZD2rU6UQifmZ3loCooVmLunalbcSeKz7r_BjJ`, `/u/2` account). `DAILYSALES_COLS` now includes `paid`; date cells normalize to `yyyy-MM-dd` server-side (`ndate`). Deployment URL unchanged.
+- `index.html` normalizes dates client-side too, so the app works even if the backend reverted.
+- Admin-only: inventory add/edit/delete, paid/credit toggle. Purchases and everything else are counter-level.
 - Tabs: Inventory (includes Stock-In / Record Purchase), Payments (paid/credit tracking + invoice generator), Daily Sales (multi-item, service charges), Workshop Repairs, Customers, Suppliers, Daily Summary, Monthly Reports, Admin Panel, Backup.
 - Single-file app: keep `index.html` self-contained. Sales schema is one row per line (item or `SRV: <service>`), shared `ref` groups a receipt.
 - The 60 s backend sync no longer re-renders while the user has unsaved form input (`formDirty` guard); it applies silently and renders after the next save/submit.
