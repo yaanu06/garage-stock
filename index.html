@@ -139,6 +139,10 @@ td button{padding:6px 12px;min-height:36px}
 
 .hint{font-size:12px;color:var(--muted);margin-top:6px}
 
+@media (min-width:1024px){
+  main{max-width:1200px}
+  nav{flex-wrap:wrap;overflow-x:visible}
+}
 @media (max-width:720px){
   form{grid-template-columns:1fr}
   .stats{grid-template-columns:repeat(2,1fr)}
